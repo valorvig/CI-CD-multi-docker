@@ -1,0 +1,52 @@
+language: generic   
+sudo: required
+services:
+  - docker
+
+before_install:
+  # make use of Dockerfile.dev - already have all the dependencies attached to the project
+  # not use the prod Dockerfile - the prod Dockerfile installs dependencies, builds a prod version, and copies over jsut the very few raw production version of our assets
+  - docker build -t valvig/react-test -f ./client/Dockerfile.dev ./client # give it a name, look into the Client directory to get the build context
+  # specify other builds you want to test
+  # - docker build myother project
+
+# after defin, then run the test
+script:
+  # add many scripts as you want when you run the test suite
+  # - docker run myotherproject runmytests # override the original command
+  # - docker run valvig/react-test npm test -- --coverage # override the startup command with "npm test", amke sure to exit if the staus code is either zero or non-zero by adding "-- --coverage" 
+  - docker run -e CI=true valvig/react-test npm test
+
+after_success:
+  # adding configuratio nto build prod versions of all projects and push all to docker hub
+  # we don't have to define the dockerfile since we are using the simple Dockerfile here
+  - docker build -t valvig/multi-client ./client # it's good to name it according to the repo
+  - docker build -t valvig/multi-nginx ./nginx
+  - docker build -t valvig/multi-server ./server
+  - docker build -t valvig/multi-worker ./worker
+  # Log in to the docker CLI (one single command)
+  # echo to retrieve from the enviroment variables and emit that over stdin as input to the next command or the command on the other side of the pipe
+  # "$DOCKER_PASSWORD" is taken and add into the standard channel for the entire command "docker login ..."
+  # -u flag to add the id and tell docker login to expect to receive the password over stdin
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take these iamges and push them to docker hub
+  # docker push + name = image on docker hub
+  - docker push valvig/multi-client
+  - docker push valvig/multi-nginx
+  - docker push valvig/multi-server
+  - docker push valvig/multi-worker
+  # test outthis entire script and make sure that we can successfully push iamges off to docker hub
+  
+deploy: # not array entry, just single obj (don't have to add -)
+  provider: elasticbeanstalk
+  region: ap-southeast-1 # look at the first part of the domain name of your amazon's url
+  app:  # first part of our aws app's header
+  env: MultiDocker-env # our app's environment
+  bucket_name: elasticbeanstalk-ap-southeast-1-377907238641 # search s3 --> select the one with the same region number --> click to see its full name
+  bucket_path: docker_multi # what we're going to call it
+  on:
+    # run this deployment, build, or push this when our travis is on master branch
+    branch: master
+  access_key_id: $AWS_ACCESS_KEY # from Travis's enviroment variables
+  secret_access_key:
+    secret: $AWS_SECRET_KEY
