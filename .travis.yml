@@ -40,7 +40,7 @@ after_success:
 deploy: # not array entry, just single obj (don't have to add -)
   provider: elasticbeanstalk
   region: ap-southeast-1 # look at the first part of the domain name of your amazon's url
-  app:  # first part of our aws app's header
+  app: multi-docker # first part of our aws app's header
   env: MultiDocker-env # our app's environment
   bucket_name: elasticbeanstalk-ap-southeast-1-377907238641 # search s3 --> select the one with the same region number --> click to see its full name
   bucket_path: docker_multi # what we're going to call it
