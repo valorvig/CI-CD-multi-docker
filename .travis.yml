@@ -48,5 +48,4 @@ deploy: # not array entry, just single obj (don't have to add -)
     # run this deployment, build, or push this when our travis is on master branch
     branch: master
   access_key_id: $AWS_ACCESS_KEY # from Travis's enviroment variables
-  secret_access_key:
-    secret: $AWS_SECRET_KEY
+  secret_access_key: $AWS_SECRET_KEY
